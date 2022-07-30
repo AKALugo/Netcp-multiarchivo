@@ -1,0 +1,30 @@
+[TAREA] Envío múltiple
+Modifica tu prototipo de Netcp para implementar los comandos como hemos comentado al principio de esta sección:
+
+Necesitarás una estructura de datos a modo de tabla de tareas de envío. Cada envío activo deben tener una entrada en la tabla con un identificador único —un entero que se incrementará en cada ocasión—. Así el hilo de la tarea 1 puede buscar la tarea para gestionarla —pausar, aborta, etc.— y el hilo principal puede cancelar las tareas pendientes antes de terminar la aplicación.
+Cada vez que el usuario usa el comando Send, el hilo de la tarea 1 crea un hilo que se hará cargo de acceder al archivo y enviarlo. Así es como se soportan varios envíos al mismo tiempo. El objeto del hilo se incorpora a la tabla de tareas de envío para que esté accesible al resto de la aplicación.
+Cuando un hilo de envío termina, tras mostrar que el envío se ha completado, el hilo se extrae a sí mismo de la tabla de envíos y termina.
+El hilo de la tarea 1 puede cancelar o pausar un envío cuando el usuario lo pide, usando los mecanismos de cancelación y coordinación que desarrollamos para la parte anterior de la práctica.
+
+En el hilo de la tarea 3 —el de recepción— ahora recibirá a través de su socket paquetes de diferentes envíos, para guardar en distintos archivos. ¿Cómo sabe, cuando llega un paquete, si es un nuevo envío —recordemos que el primer paquete tiene nombre de archivo y tamaño— o si es contenido para un envío ya iniciado? Sencillo:
+
+Cada hilo de envío usará un socket diferente para hacer el envío. Así se hará desde la IP del equipo y un puerto diferente para cada envío.
+El hilo de recepción, al leer un paquete, recibe también la dirección y puerto del remitente. Esa información sirve para distinguir unos envíos de otros. Simplemente se consulta en una tabla de envíos.
+Si no hay entrada, es el primer paquete de un nuevo envío. Así que se crea el archivo, se mapea, etc. y se inserta la información necesaria en la tabla
+Si hay entrada, es que se trata de un paquete para un envío ya iniciado. Así que se recupera la información del envío desde la tabla y se usa el contenido del paquete como corresponda.
+
+Como hemos comentado, necesitamos controlar el número de tareas de envío activas, con lo que se sugiere utilizar una estructura tipo map, que asocie el identificador del envío con el hilo que lo gestiona. Al crear un hilo debemos añadir una entrada en el map, y cuando la tarea termina, debe eliminar su entrada:
+
+std::unordered_map<int, SendingTask>> sending_tasks;
+
+La estructura SendingTask debe contener la información que necesitamos preservar de cada tarea de envío que debe ser accesible para el resto de la aplicación: objeto std::thread, variables atómicas para coordinar la cancelación o la pausa, etc.
+
+Esta estructura nos servirá también para terminar de manera controlada todos los hilos activos cuando deba terminar la aplicación.
+
+La tarea 3, para recibir archivos, necesita un map parecido:
+
+std::unordered_map<std::pair<uint32_t, in_port_t>, ReceptionTask>> reception_tasks;
+
+Este map se indexa por la pareja (dirección IP, puerto) para obtener la información sobre la tarea de recepción guardada en ReceptionTask: descriptor de archivo, tamaño, puntero a la zona mapeada de la memoria, etc.
+
+Por último, no te olvides de manejar los posibles errores adecuadamente. Es decir, comprobar condiciones de error y lanzado e interceptando las excepciones correspondientes.

@@ -1,0 +1,28 @@
+Antes de comenzar vamos a repasar algunos consejos que creemos que te serán útiles para completar la práctica con éxito y para adquirir habilidades como buen desarrollador.
+Aprovecha las facilidades de C++ todo lo posible
+En C++ se utilizan conceptos como clases, objetos, flujos o sobrecarga de operadores. Además implementa una extensa librería estándar que es de gran ayuda para los programadores. Utiliza las abstracciones de C++ todo lo posible para desarrollar la lógica del programa.
+
+Obviamente nuestro objetivo es aprender cómo funciona el sistema operativo. Así que utilizaremos necesariamente la interfaz de programación del sistema operativo, que está escrita en C. Pero no tienes que hacer toda la práctica en C. Simplemente tendrás que crear clases y métodos que envuelvan esa interfaz de bajo nivel para utilizarla más fácilmente con las abstracciones de C++.
+
+Por ejemplo, la función de la librería del sistema que devuelve el valor de una variable de entorno tiene este prototipo:
+
+char* getenv(const char* name);
+
+Pero no hace falta que te líes a trabajar con cadenas char* de C. Simplemente crea tu propia versión que utilice las mucho más cómodas std::string de C++:
+
+std::string getenv(const std::string& name)
+{
+	char* value = getenv(name.c_str());
+	if (value) {
+	return std::string(value);
+}
+else {
+return std::string();
+}
+}
+
+Y utilízala donde lo necesites en tu programa.
+Programa de forma defensiva
+La mayor parte de las funciones de la librería del sistema pueden fallar por diversos motivos. Es decir, comprueba siempre estos errores y trátalos adecuadamente, por ejemplo, mostrando un error y haciendo que termine el programa correctamente.
+
+Por ejemplo, la función getenv() anterior devuelve NULL si la variable no existe. Si usas esa función, pero olvidas comprobar si ha devuelto NULL, confiando ciegamente en que la variable a la que quieres acceder siempre existe, te arriesgas a que tu programa termine con una violación de segmento sin motivo aparente. Por eso en la versión adaptada a C++ comprobamos si vale NULL y si es así
